@@ -2,6 +2,15 @@
 
 REST API sederhana untuk sistem kasir yang dibangun dengan Go. API ini menyediakan operasi CRUD untuk produk dan kategori.
 
+## 🚀 Live Demo
+
+**Railway Deployment:** https://kasir-api-production-1404.up.railway.app
+
+**Test Endpoints:**
+- [GET /categories](https://kasir-api-production-1404.up.railway.app/categories) - Lihat semua kategori
+- [GET /api/produk](https://kasir-api-production-1404.up.railway.app/api/produk) - Lihat semua produk
+- [GET /health](https://kasir-api-production-1404.up.railway.app/health) - Health check
+
 ## 🚀 Fitur
 
 - **Manajemen Produk**: Create, Read, Update, Delete produk
@@ -112,14 +121,25 @@ curl -X PUT http://localhost:8080/api/produk/1 \
 
 ```
 kasir-api/
-├── main.go              # File utama aplikasi
-├── category.go          # Handler kategori (legacy)
-├── category_routes.go   # Routes kategori (legacy)
+├── main.go              # File utama aplikasi dengan semua handler
 ├── go.mod              # Go module
-└── models/
-    ├── category.go      # Model kategori
-    └── category_routes.go # Handler kategori
+└── README.md           # Dokumentasi project
 ```
+
+## 📊 Data Sample
+
+### Produk
+- Indomie (Rp 3.500)
+- Vit 1000ml (Rp 3.000) 
+- Kecap (Rp 12.000)
+
+### Kategori
+- Makanan
+- Minuman
+- Elektronik
+- Pakaian
+- Kesehatan
+- Olahraga
 
 ## 🔧 Development
 
