@@ -31,6 +31,10 @@ var produk = []Produk{
 var categories = []Category{
 	{ID: 1, Name: "Makanan", Description: "Kategori untuk produk makanan"},
 	{ID: 2, Name: "Minuman", Description: "Kategori untuk produk minuman"},
+	{ID: 3, Name: "Elektronik", Description: "Kategori untuk produk elektronik"},
+	{ID: 4, Name: "Pakaian", Description: "Kategori untuk produk pakaian dan fashion"},
+	{ID: 5, Name: "Kesehatan", Description: "Kategori untuk produk kesehatan dan obat-obatan"},
+	{ID: 6, Name: "Olahraga", Description: "Kategori untuk peralatan dan perlengkapan olahraga"},
 }
 
 func getCategoryByID(w http.ResponseWriter, r *http.Request) {
