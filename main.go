@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -15,10 +16,86 @@ type Produk struct {
 	Stok  int    `json:"stok"`
 }
 
+type Category struct {
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 var produk = []Produk{
 	{ID: 1, Nama: "Indomie", Harga: 3500, Stok: 10},
 	{ID: 2, Nama: "Vit 1000ml", Harga: 3000, Stok: 40},
-	{ID: 2, Nama: "Kecap", Harga: 12000, Stok: 20},
+	{ID: 3, Nama: "Kecap", Harga: 12000, Stok: 20},
+}
+
+var categories = []Category{
+	{ID: 1, Name: "Makanan", Description: "Kategori untuk produk makanan"},
+	{ID: 2, Name: "Minuman", Description: "Kategori untuk produk minuman"},
+}
+
+func getCategoryByID(w http.ResponseWriter, r *http.Request) {
+	idStr := strings.TrimPrefix(r.URL.Path, "/categories/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	for _, c := range categories {
+		if c.ID == id {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(c)
+			return
+		}
+	}
+
+	http.Error(w, "Category not found", http.StatusNotFound)
+}
+
+func updateCategory(w http.ResponseWriter, r *http.Request) {
+	idStr := strings.TrimPrefix(r.URL.Path, "/categories/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	for i, c := range categories {
+		if c.ID == id {
+			var updatedCategory Category
+			err := json.NewDecoder(r.Body).Decode(&updatedCategory)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			categories[i].Name = updatedCategory.Name
+			categories[i].Description = updatedCategory.Description
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(categories[i])
+			return
+		}
+	}
+	http.Error(w, "Category not found", http.StatusNotFound)
+}
+
+func deleteCategory(w http.ResponseWriter, r *http.Request) {
+	idStr := strings.TrimPrefix(r.URL.Path, "/categories/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	for i, c := range categories {
+		if c.ID == id {
+			categories = append(categories[:i], categories[i+1:]...)
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+	}
+	http.Error(w, "Category not found", http.StatusNotFound)
 }
 
 func getProdukByID(w http.ResponseWriter, r *http.Request) {
@@ -40,7 +117,6 @@ func getProdukByID(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Produk not found", http.StatusNotFound)
 }
 
-// PUT localhost:8080/api/produk/{id}
 func updateProduk(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/produk/")
 	id, err := strconv.Atoi(idStr)
@@ -81,10 +157,7 @@ func deleteProduk(w http.ResponseWriter, r *http.Request) {
 	for i, p := range produk {
 		if p.ID == id {
 			produk = append(produk[:i], produk[i+1:]...)
-			w.WriteHeader(http.StatusNoContent) //204
-			{
-				json.NewEncoder(w).Encode(map[string]string{"message": "Produk deleted successfully"})
-			}
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 	}
@@ -92,53 +165,101 @@ func deleteProduk(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// GET localhost:8080/api/produk/{id}
-	// PUT localhost:8080/api/produk/{id}
-	// DELETE localhost:8080/api/produk/{id}
+	// Category routes
+	http.HandleFunc("/categories/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			getCategoryByID(w, r)
+		} else if r.Method == "PUT" {
+			updateCategory(w, r)
+		} else if r.Method == "DELETE" {
+			deleteCategory(w, r)
+		}
+	})
+
+	http.HandleFunc("/categories", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == "GET" {
+			json.NewEncoder(w).Encode(categories)
+		} else if r.Method == "POST" {
+			var newCategory Category
+			err := json.NewDecoder(r.Body).Decode(&newCategory)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			
+			newCategory.ID = len(categories) + 1
+			categories = append(categories, newCategory)
+
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(newCategory)
+		}
+	})
+
+	// Product routes
 	http.HandleFunc("/api/produk/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			getProdukByID(w, r)
 		} else if r.Method == "PUT" {
 			updateProduk(w, r)
 		} else if r.Method == "DELETE" {
-			// delete logic here
 			deleteProduk(w, r)
 		}
-
 	})
 
-	// GET localhost:8080/api/produk
-	// POST localhost:8080/api/produk
 	http.HandleFunc("/api/produk", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "GET" {
 			json.NewEncoder(w).Encode(produk)
 		} else if r.Method == "POST" {
-			// baca data dari request body
 			var newProduk Produk
 			err := json.NewDecoder(r.Body).Decode(&newProduk)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			// masukin data ke variable Produk
+			
 			newProduk.ID = len(produk) + 1
 			produk = append(produk, newProduk)
 
-			w.WriteHeader(http.StatusCreated) //201
+			w.WriteHeader(http.StatusCreated)
 			json.NewEncoder(w).Encode(newProduk)
 		}
 	})
 
-	// localhost:8080/health
+	// Root endpoint for debugging
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"message": "Kasir API is running",
+			"endpoints": []string{
+				"GET /health",
+				"GET /api/produk",
+				"GET /categories",
+			},
+		})
+	})
+
+	// Health check
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{
 			"status":  "Ok",
 			"message": "API Running"})
 	})
-	fmt.Println("Server running di localhost:8080")
-	err := http.ListenAndServe(":8080", nil)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	fmt.Printf("Server running on port %s\n", port)
+	fmt.Println("Endpoints:")
+	fmt.Println("GET /api/produk - Get all products")
+	fmt.Println("GET /categories - Get all categories")
+	fmt.Println("GET /health - Health check")
+	
+	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		fmt.Println("gagal running server!")
 	}
