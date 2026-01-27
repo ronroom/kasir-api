@@ -5,6 +5,7 @@ REST API sederhana untuk sistem kasir yang dibangun dengan Go. API ini menyediak
 ## 🚀 Live Demo
 
 **Railway Deployment:** https://kasir-api-production-1404.up.railway.app
+**Zeabur Deployment:** https://kasir-api-zeabur.zeabur.app (akan tersedia setelah deploy)
 
 **Test Endpoints:**
 - [GET /categories](https://kasir-api-production-1404.up.railway.app/categories) - Lihat semua kategori

@@ -1,0 +1,17 @@
+# Zeabur Configuration
+name: kasir-api
+type: go
+
+# Build settings
+build:
+  commands:
+    - go mod tidy
+    - go build -o app
+
+# Runtime settings
+run:
+  command: ./app
+
+# Environment
+env:
+  PORT: 8080

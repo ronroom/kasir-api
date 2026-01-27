@@ -236,6 +236,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"message": "Kasir API is running",
+			"platform": "Multi-Platform (Railway + Zeabur)",
 			"endpoints": []string{
 				"GET /health",
 				"GET /api/produk",
