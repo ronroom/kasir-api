@@ -255,20 +255,25 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		// Try different port environment variables
+		// Try different port environment variables for various platforms
 		port = os.Getenv("ZEABUR_PORT")
+	}
+	if port == "" {
+		port = os.Getenv("SERVER_PORT")
 	}
 	if port == "" {
 		port = "8080"
 	}
 
 	fmt.Printf("Server running on port %s\n", port)
+	fmt.Printf("Environment PORT: %s\n", os.Getenv("PORT"))
+	fmt.Printf("Environment ZEABUR_PORT: %s\n", os.Getenv("ZEABUR_PORT"))
 	fmt.Println("Endpoints:")
 	fmt.Println("GET /api/produk - Get all products")
 	fmt.Println("GET /categories - Get all categories")
 	fmt.Println("GET /health - Health check")
 	
-	err := http.ListenAndServe(":"+port, nil)
+	err := http.ListenAndServe("0.0.0.0:"+port, nil)
 	if err != nil {
 		fmt.Println("gagal running server!")
 	}

@@ -11,6 +11,9 @@ build:
 run:
   command: ./kasir-api
 
+# Port configuration
+port: 8080
+
 # Environment
 env:
   PORT: 8080
