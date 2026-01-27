@@ -1,16 +1,15 @@
 # Zeabur Configuration
 name: kasir-api
-type: go
 
 # Build settings
 build:
   commands:
     - go mod tidy
-    - go build -o app
+    - go build -o kasir-api .
 
 # Runtime settings
 run:
-  command: ./app
+  command: ./kasir-api
 
 # Environment
 env:

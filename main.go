@@ -255,6 +255,10 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
+		// Try different port environment variables
+		port = os.Getenv("ZEABUR_PORT")
+	}
+	if port == "" {
 		port = "8080"
 	}
 
