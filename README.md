@@ -5,12 +5,12 @@ REST API sederhana untuk sistem kasir yang dibangun dengan Go. API ini menyediak
 ## 🚀 Live Demo
 
 **Railway Deployment:** https://kasir-api-production-1404.up.railway.app
-**Zeabur Deployment:** https://kasir-api-zeabur.zeabur.app (akan tersedia setelah deploy)
+**Zeabur Deployment:** https://kasir-api-check.zeabur.app
 
 **Test Endpoints:**
-- [GET /categories](https://kasir-api-production-1404.up.railway.app/categories) - Lihat semua kategori
-- [GET /api/produk](https://kasir-api-production-1404.up.railway.app/api/produk) - Lihat semua produk
-- [GET /health](https://kasir-api-production-1404.up.railway.app/health) - Health check
+- [Railway - Categories](https://kasir-api-production-1404.up.railway.app/categories) | [Zeabur - Categories](https://kasir-api-check.zeabur.app/categories)
+- [Railway - Products](https://kasir-api-production-1404.up.railway.app/api/produk) | [Zeabur - Products](https://kasir-api-check.zeabur.app/api/produk)
+- [Railway - Health](https://kasir-api-production-1404.up.railway.app/health) | [Zeabur - Health](https://kasir-api-check.zeabur.app/health)
 
 ## 🚀 Fitur
 
