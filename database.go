@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"kasir-api/models"
 	"log"
 	"os"
 
@@ -11,11 +12,14 @@ import (
 
 var db *sql.DB
 
-func initDB() {
+func initDB(connectionString string) {
 	var err error
 	
-	// Get DATABASE_URL from environment (Railway provides this)
-	databaseURL := os.Getenv("DATABASE_URL")
+	// Use provided connection string or fallback to DATABASE_URL
+	databaseURL := connectionString
+	if databaseURL == "" {
+		databaseURL = os.Getenv("DATABASE_URL")
+	}
 	if databaseURL == "" {
 		// Fallback for local development
 		databaseURL = "postgres://localhost/kasir_db?sslmode=disable"
@@ -47,9 +51,9 @@ func createTables() {
 	productTable := `
 	CREATE TABLE IF NOT EXISTS products (
 		id SERIAL PRIMARY KEY,
-		nama VARCHAR(100) NOT NULL,
-		harga INTEGER NOT NULL,
-		stok INTEGER NOT NULL
+		name VARCHAR(100) NOT NULL,
+		price INTEGER NOT NULL,
+		stock INTEGER NOT NULL
 	);`
 
 	_, err := db.Exec(categoryTable)
@@ -94,16 +98,16 @@ func insertSampleData() {
 	db.QueryRow("SELECT COUNT(*) FROM products").Scan(&count)
 	
 	if count == 0 {
-		products := []Produk{
-			{Nama: "Indomie", Harga: 3500, Stok: 10},
-			{Nama: "Vit 1000ml", Harga: 3000, Stok: 40},
-			{Nama: "Kecap", Harga: 12000, Stok: 20},
+		products := []models.Product{
+			{Name: "Indomie", Price: 3500, Stock: 10},
+			{Name: "Vit 1000ml", Price: 3000, Stock: 40},
+			{Name: "Kecap", Price: 12000, Stock: 20},
 		}
 
 		for _, prod := range products {
-			_, err := db.Exec("INSERT INTO products (nama, harga, stok) VALUES ($1, $2, $3)", prod.Nama, prod.Harga, prod.Stok)
+			_, err := db.Exec("INSERT INTO products (name, price, stock) VALUES ($1, $2, $3)", prod.Name, prod.Price, prod.Stock)
 			if err != nil {
-				log.Printf("Failed to insert product %s: %v", prod.Nama, err)
+				log.Printf("Failed to insert product %s: %v", prod.Name, err)
 			}
 		}
 		fmt.Println("Sample products inserted")
