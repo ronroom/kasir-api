@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"kasir-api/models"
 	"kasir-api/services"
 	"net/http"
@@ -100,12 +101,19 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Debug: Print request info
+	fmt.Printf("PUT Request - ID: %d, Content-Type: %s\n", id, r.Header.Get("Content-Type"))
+
 	var product models.Product
 	err = json.NewDecoder(r.Body).Decode(&product)
 	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		fmt.Printf("JSON Decode Error: %v\n", err)
+		http.Error(w, fmt.Sprintf("Invalid JSON format: %v", err), http.StatusBadRequest)
 		return
 	}
+
+	// Debug: Print decoded product
+	fmt.Printf("Decoded Product: %+v\n", product)
 
 	product.ID = id
 	err = h.service.Update(&product)
