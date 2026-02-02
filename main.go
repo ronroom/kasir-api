@@ -12,17 +12,10 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/spf13/viper"
 )
-
-type Category struct {
-	ID          int    `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-}
 
 type Config struct {
 	PORT   string `mapstructure:"PORT"`
@@ -32,15 +25,6 @@ type Config struct {
 var db *sql.DB
 
 
-
-var categories = []Category{
-	{ID: 1, Name: "Makanan", Description: "Kategori untuk produk makanan"},
-	{ID: 2, Name: "Minuman", Description: "Kategori untuk produk minuman"},
-	{ID: 3, Name: "Elektronik", Description: "Kategori untuk produk elektronik"},
-	{ID: 4, Name: "Pakaian", Description: "Kategori untuk produk pakaian dan fashion"},
-	{ID: 5, Name: "Kesehatan", Description: "Kategori untuk produk kesehatan dan obat-obatan"},
-	{ID: 6, Name: "Olahraga", Description: "Kategori untuk peralatan dan perlengkapan olahraga"},
-}
 
 func loadConfig() Config {
 	viper.AutomaticEnv()
@@ -112,25 +96,24 @@ func createTablesAndData() {
 		}
 		fmt.Println("Sample products inserted")
 	}
-}
 
-func getCategoryByID(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/categories/")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(w, "Invalid ID", http.StatusBadRequest)
-		return
-	}
-
-	for _, c := range categories {
-		if c.ID == id {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(c)
-			return
+	// Insert sample categories
+	db.QueryRow("SELECT COUNT(*) FROM categories").Scan(&count)
+	if count == 0 {
+		categories := []models.Category{
+			{Name: "Makanan", Description: "Kategori untuk produk makanan"},
+			{Name: "Minuman", Description: "Kategori untuk produk minuman"},
+			{Name: "Elektronik", Description: "Kategori untuk produk elektronik"},
 		}
-	}
 
-	http.Error(w, "Category not found", http.StatusNotFound)
+		for _, cat := range categories {
+			_, err := db.Exec("INSERT INTO categories (name, description) VALUES ($1, $2)", cat.Name, cat.Description)
+			if err != nil {
+				fmt.Printf("Failed to insert category %s: %v\n", cat.Name, err)
+			}
+		}
+		fmt.Println("Sample categories inserted")
+	}
 }
 
 func main() {
@@ -158,20 +141,14 @@ func main() {
 	productRepo := repositories.NewProductRepository(db)
 	productService := services.NewProductService(productRepo)
 	productHandler := handlers.NewProductHandler(productService)
-	
-	// Category routes
-	http.HandleFunc("/categories/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "GET" {
-			getCategoryByID(w, r)
-		}
-	})
 
-	http.HandleFunc("/categories", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.Method == "GET" {
-			json.NewEncoder(w).Encode(categories)
-		}
-	})
+	categoryRepo := repositories.NewCategoryRepository(db)
+	categoryService := services.NewCategoryService(categoryRepo)
+	categoryHandler := handlers.NewCategoryHandler(categoryService)
+	
+	// Category routes with dependency injection
+	http.HandleFunc("/categories/", categoryHandler.HandleCategoryByID)
+	http.HandleFunc("/categories", categoryHandler.HandleCategories)
 
 	// Product routes with dependency injection
 	http.HandleFunc("/api/produk/", productHandler.HandleProductByID)
@@ -194,6 +171,10 @@ func main() {
 				"PUT /api/produk/{id}",
 				"DELETE /api/produk/{id}",
 				"GET /categories",
+				"POST /categories",
+				"GET /categories/{id}",
+				"PUT /categories/{id}",
+				"DELETE /categories/{id}",
 			},
 		})
 	})
