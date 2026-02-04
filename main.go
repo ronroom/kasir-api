@@ -24,17 +24,15 @@ type Config struct {
 
 var db *sql.DB
 
-
-
 func loadConfig() Config {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	
+
 	if _, err := os.Stat(".env"); err == nil {
 		viper.SetConfigFile(".env")
 		_ = viper.ReadInConfig()
 	}
-	
+
 	config := Config{
 		PORT:   viper.GetString("PORT"),
 		DBConn: viper.GetString("DB_CONN"),
@@ -46,7 +44,7 @@ func createTablesAndData() {
 	if db == nil {
 		return
 	}
-	
+
 	// Create tables
 	categoryTable := `
 	CREATE TABLE IF NOT EXISTS categories (
@@ -60,7 +58,8 @@ func createTablesAndData() {
 		id SERIAL PRIMARY KEY,
 		name VARCHAR(100) NOT NULL,
 		price INTEGER NOT NULL,
-		stock INTEGER NOT NULL
+		stock INTEGER NOT NULL,
+		category_id INTEGER REFERENCES categories(id)
 	);`
 
 	_, err := db.Exec(categoryTable)
@@ -75,21 +74,28 @@ func createTablesAndData() {
 		return
 	}
 
+	// Add category_id column if not exists
+	_, err = db.Exec("ALTER TABLE products ADD COLUMN IF NOT EXISTS category_id INTEGER REFERENCES categories(id)")
+	if err != nil {
+		fmt.Printf("Failed to add category_id column: %v\n", err)
+		return
+	}
+
 	fmt.Println("Database tables created successfully")
-	
+
 	// Insert sample data
 	var count int
 	db.QueryRow("SELECT COUNT(*) FROM products").Scan(&count)
-	
+
 	if count == 0 {
 		products := []models.Product{
-			{Name: "Indomie", Price: 3500, Stock: 10},
-			{Name: "Vit 1000ml", Price: 3000, Stock: 40},
-			{Name: "Kecap", Price: 12000, Stock: 20},
+			{Name: "Indomie", Price: 3500, Stock: 10, CategoryID: 1},
+			{Name: "Vit 1000ml", Price: 3000, Stock: 40, CategoryID: 2},
+			{Name: "Kecap", Price: 12000, Stock: 20, CategoryID: 1},
 		}
 
 		for _, prod := range products {
-			_, err := db.Exec("INSERT INTO products (name, price, stock) VALUES ($1, $2, $3)", prod.Name, prod.Price, prod.Stock)
+			_, err := db.Exec("INSERT INTO products (name, price, stock, category_id) VALUES ($1, $2, $3, $4)", prod.Name, prod.Price, prod.Stock, prod.CategoryID)
 			if err != nil {
 				fmt.Printf("Failed to insert product %s: %v\n", prod.Name, err)
 			}
@@ -118,10 +124,10 @@ func createTablesAndData() {
 
 func main() {
 	config := loadConfig()
-	
+
 	// Debug: Print loaded config
 	fmt.Printf("Loaded config - PORT: %s, DB_CONN: %s\n", config.PORT, config.DBConn)
-	
+
 	// Setup database
 	if config.DBConn != "" {
 		var err error
@@ -130,13 +136,13 @@ func main() {
 			log.Fatal("Failed to initialize database:", err)
 		}
 		defer db.Close()
-		
+
 		// Create tables and insert sample data
 		createTablesAndData()
 	} else {
 		fmt.Println("No database connection configured, running without database")
 	}
-	
+
 	// Dependency Injection
 	productRepo := repositories.NewProductRepository(db)
 	productService := services.NewProductService(productRepo)
@@ -145,7 +151,7 @@ func main() {
 	categoryRepo := repositories.NewCategoryRepository(db)
 	categoryService := services.NewCategoryService(categoryRepo)
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
-	
+
 	// Category routes with dependency injection
 	http.HandleFunc("/categories/", categoryHandler.HandleCategoryByID)
 	http.HandleFunc("/categories", categoryHandler.HandleCategories)
@@ -160,7 +166,7 @@ func main() {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"message": "Kasir API is running",
 			"config": map[string]string{
-				"port": config.PORT,
+				"port":         config.PORT,
 				"db_connected": fmt.Sprintf("%t", db != nil),
 			},
 			"endpoints": []string{
@@ -197,7 +203,7 @@ func main() {
 
 	addr := "0.0.0.0:" + port
 	fmt.Println("Server running di", addr)
-	
+
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
 		fmt.Println("gagal running server", err)

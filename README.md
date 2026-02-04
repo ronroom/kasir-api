@@ -155,6 +155,18 @@ go build -o kasir-api
 ./kasir-api
 ```
 
+## 🔁 Database Migration
+
+Jika kolom `category_id` belum ada di tabel `products`, jalankan migration SQL yang disediakan:
+
+```bash
+# Pastikan environment variable DB_CONN di-set, contoh:
+# export DB_CONN='postgres://user:password@host:port/dbname?sslmode=disable'
+psql "$DB_CONN" -f migrations/001_add_category_id.sql
+```
+
+File migrasi berada di `migrations/001_add_category_id.sql` dan akan menambahkan kolom `category_id` jika belum ada.
+
 ## 📄 Response Format
 
 ### Success Response
