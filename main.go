@@ -62,6 +62,22 @@ func createTablesAndData() {
 		category_id INTEGER REFERENCES categories(id)
 	);`
 
+	transactionTable := `
+	CREATE TABLE IF NOT EXISTS transactions (
+		id SERIAL PRIMARY KEY,
+		total_amount INTEGER NOT NULL,
+		created_at TIMESTAMP NOT NULL
+	);`
+
+	transactionDetailTable := `
+	CREATE TABLE IF NOT EXISTS transaction_details (
+		id SERIAL PRIMARY KEY,
+		transaction_id INTEGER NOT NULL REFERENCES transactions(id),
+		product_id INTEGER NOT NULL REFERENCES products(id),
+		quantity INTEGER NOT NULL,
+		subtotal INTEGER NOT NULL
+	);`
+
 	_, err := db.Exec(categoryTable)
 	if err != nil {
 		fmt.Printf("Failed to create categories table: %v\n", err)
@@ -71,6 +87,18 @@ func createTablesAndData() {
 	_, err = db.Exec(productTable)
 	if err != nil {
 		fmt.Printf("Failed to create products table: %v\n", err)
+		return
+	}
+
+	_, err = db.Exec(transactionTable)
+	if err != nil {
+		fmt.Printf("Failed to create transactions table: %v\n", err)
+		return
+	}
+
+	_, err = db.Exec(transactionDetailTable)
+	if err != nil {
+		fmt.Printf("Failed to create transaction details table: %v\n", err)
 		return
 	}
 
@@ -152,6 +180,10 @@ func main() {
 	categoryService := services.NewCategoryService(categoryRepo)
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 
+	transactionRepo := repositories.NewTransactionRepository(db)
+	transactionService := services.NewTransactionService(transactionRepo)
+	transactionHandler := handlers.NewTransactionHandler(transactionService)
+
 	// Category routes with dependency injection
 	http.HandleFunc("/categories/", categoryHandler.HandleCategoryByID)
 	http.HandleFunc("/categories", categoryHandler.HandleCategories)
@@ -159,6 +191,9 @@ func main() {
 	// Product routes with dependency injection
 	http.HandleFunc("/api/produk/", productHandler.HandleProductByID)
 	http.HandleFunc("/api/produk", productHandler.HandleProducts)
+
+	// Transaction routes with dependency injection
+	http.HandleFunc("/api/checkout", transactionHandler.HandleCheckout)
 
 	// Root endpoint
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -181,6 +216,7 @@ func main() {
 				"GET /categories/{id}",
 				"PUT /categories/{id}",
 				"DELETE /categories/{id}",
+				"POST /api/checkout",
 			},
 		})
 	})

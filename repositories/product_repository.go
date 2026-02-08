@@ -14,11 +14,24 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (repo *ProductRepository) GetAll() ([]models.Product, error) {
+func (repo *ProductRepository) GetAll(name string) ([]models.Product, error) {
 	query := `SELECT p.id, p.name, p.price, p.stock, p.category_id, c.name as category_name
-	FROM products p
-	LEFT JOIN categories c ON p.category_id = c.id`
-	rows, err := repo.db.Query(query)
+FROM products p
+LEFT JOIN categories c ON p.category_id = c.id`
+
+	if name != "" {
+		query += ` WHERE p.name ILIKE $1`
+	}
+
+	var rows *sql.Rows
+	var err error
+
+	if name != "" {
+		rows, err = repo.db.Query(query, "%"+name+"%")
+	} else {
+		rows, err = repo.db.Query(query)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -46,9 +59,9 @@ func (repo *ProductRepository) Create(product *models.Product) error {
 // GetByID - ambil produk by ID
 func (repo *ProductRepository) GetByID(id int) (*models.Product, error) {
 	query := `SELECT p.id, p.name, p.price, p.stock, p.category_id, c.name as category_name
-	FROM products p
-	LEFT JOIN categories c ON p.category_id = c.id
-	WHERE p.id = $1`
+FROM products p
+LEFT JOIN categories c ON p.category_id = c.id
+WHERE p.id = $1`
 
 	var p models.Product
 	err := repo.db.QueryRow(query, id).Scan(&p.ID, &p.Name, &p.Price, &p.Stock, &p.CategoryID, &p.CategoryName)
