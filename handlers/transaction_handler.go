@@ -6,6 +6,7 @@ import (
 
 	"kasir-api/models"
 	"kasir-api/services"
+	"strings"
 )
 
 type TransactionHandler struct {
@@ -34,6 +35,14 @@ func (h *TransactionHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate items
+	for _, item := range req.Items {
+		if item.Quantity <= 0 {
+			http.Error(w, "Quantity must be greater than 0", http.StatusBadRequest)
+			return
+		}
+	}
+
 	// default to false if not provided (or we can get from query params if needed)
 	useLock := false
 	// optional: get useLock from query params, e.g., ?lock=true
@@ -43,7 +52,18 @@ func (h *TransactionHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 
 	transaction, err := h.service.Checkout(req.Items, useLock)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		// Start with specific error checks
+		if strings.Contains(err.Error(), "insufficient stock") {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
+		// Fallback for unexpected errors
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 

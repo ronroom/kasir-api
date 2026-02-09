@@ -35,7 +35,8 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	products, err := h.service.GetAll(name)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		// Log error in real app
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -48,6 +49,16 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&product)
 	if err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate input
+	if product.Price < 0 {
+		http.Error(w, "Price cannot be negative", http.StatusBadRequest)
+		return
+	}
+	if product.Stock < 0 {
+		http.Error(w, "Stock cannot be negative", http.StatusBadRequest)
 		return
 	}
 
@@ -87,7 +98,15 @@ func (h *ProductHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	product, err := h.service.GetByID(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		// Assumption: service returns error if not found.
+		// For better security, check if error is "not found" vs internal error.
+		// Here we keep it simple but you might want to sanitize if it's a DB error.
+		if strings.Contains(err.Error(), "tidak ditemukan") {
+			http.Error(w, "Product not found", http.StatusNotFound)
+		} else {
+			// Log error here in real app
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -114,13 +133,27 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate input
+	if product.Price < 0 {
+		http.Error(w, "Price cannot be negative", http.StatusBadRequest)
+		return
+	}
+	if product.Stock < 0 {
+		http.Error(w, "Stock cannot be negative", http.StatusBadRequest)
+		return
+	}
+
 	// Debug: Print decoded product
 	fmt.Printf("Decoded Product: %+v\n", product)
 
 	product.ID = id
 	err = h.service.Update(&product)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		if strings.Contains(err.Error(), "tidak ditemukan") {
+			http.Error(w, "Product not found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
 		return
 	}
 
@@ -139,7 +172,11 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	err = h.service.Delete(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if strings.Contains(err.Error(), "tidak ditemukan") {
+			http.Error(w, "Product not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
 		return
 	}
 

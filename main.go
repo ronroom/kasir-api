@@ -183,6 +183,7 @@ func main() {
 	transactionRepo := repositories.NewTransactionRepository(db)
 	transactionService := services.NewTransactionService(transactionRepo)
 	transactionHandler := handlers.NewTransactionHandler(transactionService)
+	reportHandler := handlers.NewReportHandler(transactionService)
 
 	// Category routes with dependency injection
 	http.HandleFunc("/categories/", categoryHandler.HandleCategoryByID)
@@ -194,6 +195,10 @@ func main() {
 
 	// Transaction routes with dependency injection
 	http.HandleFunc("/api/checkout", transactionHandler.HandleCheckout)
+
+	// Report routes
+	http.HandleFunc("/api/report/hari-ini", reportHandler.HandleDailyReport)
+	http.HandleFunc("/api/report", reportHandler.HandleReport)
 
 	// Root endpoint
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

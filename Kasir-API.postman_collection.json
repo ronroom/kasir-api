@@ -121,6 +121,44 @@
 					"path": ["categories"]
 				}
 			}
+		},
+		{
+			"name": "Get Daily Report",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/report/hari-ini",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8080",
+					"path": ["api", "report", "hari-ini"]
+				}
+			}
+		},
+		{
+			"name": "Get Date Range Report",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/report?start_date=2026-01-01&end_date=2026-02-01",
+					"protocol": "http",
+					"host": ["localhost"],
+					"port": "8080",
+					"path": ["api", "report"],
+					"query": [
+						{
+							"key": "start_date",
+							"value": "2026-01-01"
+						},
+						{
+							"key": "end_date",
+							"value": "2026-02-01"
+						}
+					]
+				}
+			}
 		}
 	]
 }
