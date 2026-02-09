@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"kasir-api/database"
 	"kasir-api/handlers"
+	"kasir-api/middleware"
 	"kasir-api/models"
 	"kasir-api/repositories"
 	"kasir-api/services"
@@ -243,9 +244,19 @@ func main() {
 	}
 
 	addr := "0.0.0.0:" + port
+	// Root handler to combine all routes
+	// Note: Since we use http.HandleFunc which registers to DefaultServeMux,
+	// we need to wrap DefaultServeMux with our logger.
+
+	// However, http.ListenAndServe(addr, nil) uses DefaultServeMux directly.
+	// To wrap it, we should pass the wrapped mux instead of nil.
+
+	mux := http.DefaultServeMux
+	loggedMux := middleware.LoggerMiddleware(mux)
+
 	fmt.Println("Server running di", addr)
 
-	err := http.ListenAndServe(addr, nil)
+	err := http.ListenAndServe(addr, loggedMux)
 	if err != nil {
 		fmt.Println("gagal running server", err)
 	}
